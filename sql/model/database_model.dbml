@@ -1,0 +1,67 @@
+Table "user" {
+  "id_user" bigint [pk, not null]
+  "name" text
+  "email" text
+  "role" text [note: 'memeber/admin']
+  "password" text [note: 'Hashed SHA256 Password']
+  "client_id" text
+  "client_secret" text
+
+  Indexes {
+    email [unique, name: "index_2"]
+  }
+}
+
+Table "account" {
+  "id_account" bigint [pk, not null]
+  "rid_user" bigint [ref: < "user"."id_user"]
+  "name" text
+  "balance" numeric(16,2)
+
+  Indexes {
+    (rid_user, name) [unique, name: "index_2"]
+  }
+}
+
+Table "account_transaction" {
+  "id_account_transaction" bigserial [pk, not null, increment]
+  "rid_account" bigint [ref: < "account"."id_account"]
+  "action" text [note: 'spend/earn']
+  "reference" text
+  "amount" numeric(16,2)
+  "transaction_datetime" timestamp
+
+  Indexes {
+    (reference, rid_account) [unique, name: "index_2"]
+    transaction_datetime [name: "index_3"]
+  }
+}
+
+Table "audit_event" {
+  "id_audit_event" bigint [pk, not null]
+  "datetime" timestamp
+  "tablename" text
+  "row_id" bigint
+  "rid_user" bigint [ref: < "user"."id_user"]
+  "action" smallint
+
+  Indexes {
+    datetime [name: "index_2"]
+    (row_id, tablename) [name: "index_3"]
+  }
+}
+
+Table "audit_detail" {
+  "id_audit_detail" bigserial [pk, not null, increment]
+  "rid_audit_detail" bigint [ref: < "audit_event"."id_audit_event"]
+  "column_name" text
+  "column_value" text
+}
+
+Table "user_session" {
+  "id_user_session" bigserial [pk, not null, increment]
+  "rid_user" bigint [ref: < "user"."id_user"]
+  "createdat" timestamp
+  "expiresat" timestamp
+  "authtoken" text
+}
