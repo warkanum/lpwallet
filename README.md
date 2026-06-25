@@ -1,4 +1,4 @@
-# lpwallet
+# [lpwallet](https://github.com/warkanum/lpwallet)
 
 Loyalty Points Wallet backend for Sanlam SFTX. Tracks member accounts and loyalty point transactions with a full audit trail.
 
@@ -25,6 +25,8 @@ Loyalty Points Wallet backend for Sanlam SFTX. Tracks member accounts and loyalt
 user: admin@localhost
 pass: changeme
 ```
+
+**Demo Video:** [https://youtu.be/I2x2BhkAFpI](https://youtu.be/I2x2BhkAFpI)
 
 ## Quick start
 
