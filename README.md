@@ -18,6 +18,14 @@ Loyalty Points Wallet backend for Sanlam SFTX. Tracks member accounts and loyalt
 
 ---
 
+## Demo 
+
+**Demo Site:** [https://lpwdemo.warky.dev/](https://lpwdemo.warky.dev/)
+```
+user: admin@localhost
+pass: changeme
+```
+
 ## Quick start
 
 ```sh
