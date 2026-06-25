@@ -27,8 +27,8 @@ func newTxTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	f, err := os.CreateTemp("", "lpwallet-test-*.db")
 	require.NoError(t, err)
-	f.Close()
-	t.Cleanup(func() { os.Remove(f.Name()) })
+	require.NoError(t, f.Close())
+	t.Cleanup(func() { require.NoError(t, os.Remove(f.Name())) })
 
 	cfg := &config.Config{DBDriver: "sqlite", DBFile: f.Name()}
 	db, err := lpdb.Open(cfg)
@@ -194,9 +194,9 @@ func TestConcurrentEarnTransactions(t *testing.T) {
 
 	const workers = 10
 	var (
-		wg      sync.WaitGroup
-		mu      sync.Mutex
-		txErrs  []string
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		txErrs []string
 	)
 	wg.Add(workers)
 

@@ -124,7 +124,7 @@ func (m *noSchemaMigrator) CreateIndex(value interface{}, name string) error {
 func (m *noSchemaMigrator) AutoMigrate(values ...interface{}) error {
 	for _, value := range values {
 		if !m.HasTable(value) {
-			if err := m.Migrator.CreateTable(value); err != nil {
+			if err := m.CreateTable(value); err != nil {
 				return fmt.Errorf("db: create table: %w", err)
 			}
 		}

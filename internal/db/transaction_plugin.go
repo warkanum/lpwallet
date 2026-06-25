@@ -19,8 +19,7 @@ type TransactionPlugin struct{}
 func (p *TransactionPlugin) Name() string { return "transaction_plugin" }
 
 func (p *TransactionPlugin) Initialize(db *gorm.DB) error {
-	db.Callback().Create().Before("gorm:create").Register("txn:before_create", beforeCreateTransaction)
-	return nil
+	return db.Callback().Create().Before("gorm:create").Register("txn:before_create", beforeCreateTransaction)
 }
 
 func beforeCreateTransaction(tx *gorm.DB) {
@@ -45,11 +44,11 @@ func beforeCreateTransaction(tx *gorm.DB) {
 		Where("reference = ? AND rid_account = ?", record.Reference.String, record.RIDAccount.Int64).
 		Count(&count)
 	if sub.Error != nil {
-		tx.AddError(sub.Error)
+		_ = tx.AddError(sub.Error)
 		return
 	}
 	if count > 0 {
-		tx.AddError(ErrDuplicateTransaction)
+		_ = tx.AddError(ErrDuplicateTransaction)
 		return
 	}
 
@@ -60,7 +59,7 @@ func beforeCreateTransaction(tx *gorm.DB) {
 			Clauses(clause.Locking{Strength: "UPDATE"}).
 			First(&account, record.RIDAccount.Int64)
 		if sub.Error != nil {
-			tx.AddError(sub.Error)
+			_ = tx.AddError(sub.Error)
 			return
 		}
 		current := 0.0
@@ -68,7 +67,7 @@ func beforeCreateTransaction(tx *gorm.DB) {
 			current = account.Balance.Float64
 		}
 		if current-record.Amount.Float64 < 0 {
-			tx.AddError(ErrInsufficientBalance)
+			_ = tx.AddError(ErrInsufficientBalance)
 		}
 	}
 }

@@ -36,9 +36,15 @@ func (p *AuditPlugin) Name() string { return "audit_plugin" }
 
 func (p *AuditPlugin) Initialize(db *gorm.DB) error {
 	p.auditDB = db.Session(&gorm.Session{NewDB: true, SkipHooks: true})
-	db.Callback().Create().After("gorm:create").Register("audit:after_create", p.auditAfterWrite(AuditActionCreate))
-	db.Callback().Update().After("gorm:update").Register("audit:after_update", p.auditAfterWrite(AuditActionUpdate))
-	db.Callback().Delete().After("gorm:delete").Register("audit:after_delete", p.auditAfterWrite(AuditActionDelete))
+	if err := db.Callback().Create().After("gorm:create").Register("audit:after_create", p.auditAfterWrite(AuditActionCreate)); err != nil {
+		return fmt.Errorf("audit: register create callback: %w", err)
+	}
+	if err := db.Callback().Update().After("gorm:update").Register("audit:after_update", p.auditAfterWrite(AuditActionUpdate)); err != nil {
+		return fmt.Errorf("audit: register update callback: %w", err)
+	}
+	if err := db.Callback().Delete().After("gorm:delete").Register("audit:after_delete", p.auditAfterWrite(AuditActionDelete)); err != nil {
+		return fmt.Errorf("audit: register delete callback: %w", err)
+	}
 	return nil
 }
 
@@ -90,7 +96,7 @@ func (p *AuditPlugin) recordAudit(ctx context.Context, event models.ModelPublicA
 
 	go func() {
 		const attempts = 10
-		if auditDB.Dialector.Name() == "sqlite" {
+		if auditDB.Name() == "sqlite" {
 			time.Sleep(25 * time.Millisecond)
 		}
 		for attempt := 1; attempt <= attempts; attempt++ {
@@ -130,7 +136,7 @@ func extractRowID(dest any) sql.NullInt64 {
 		return sql.NullInt64{}
 	}
 	v := reflect.ValueOf(dest)
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
@@ -160,7 +166,7 @@ func extractFields(dest any) map[string]string {
 		return result
 	}
 	v := reflect.ValueOf(dest)
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
