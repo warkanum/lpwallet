@@ -30,3 +30,7 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+internal/handlers/README.md
+lpwallet.db
+bin/
+tmp/

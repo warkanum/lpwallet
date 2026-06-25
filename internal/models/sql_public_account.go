@@ -7,10 +7,10 @@ import (
 )
 
 type ModelPublicAccount struct {
-	IDAccount                              int64                            `gorm:"column:id_account;type:bigint;primaryKey" json:"id_account"`
+	IDAccount                              int64                            `gorm:"column:id_account;type:bigserial;primaryKey;autoIncrement" json:"id_account"`
 	Balance                                sql.NullFloat64                  `gorm:"column:balance;type:numeric(16,2)" json:"balance"`
-	Name                                   sql.NullString                   `gorm:"column:name;type:text;uniqueIndex:index_2" json:"name"`
-	RIDUser                                sql.NullInt64                    `gorm:"column:rid_user;type:bigint;uniqueIndex:index_2" json:"rid_user"`
+	Name                                   sql.NullString                   `gorm:"column:name;type:text;uniqueIndex:account_user_name_uq" json:"name"`
+	RIDUser                                sql.NullInt64                    `gorm:"column:rid_user;type:bigint;uniqueIndex:account_user_name_uq" json:"rid_user"`
 	RelRIDUser                             *ModelPublicUser                 `gorm:"foreignKey:RIDUser;references:IDUser" json:"relriduser,omitempty"`              // Belongs to ModelPublicUser
 	RelRIDAccountPublicAccountTransactions []*ModelPublicAccountTransaction `gorm:"foreignKey:RIDAccount" json:"relridaccountpublicaccounttransactions,omitempty"` // Has many ModelPublicAccountTransaction
 }

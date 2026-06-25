@@ -10,9 +10,9 @@ type ModelPublicAccountTransaction struct {
 	IDAccountTransaction int64               `gorm:"column:id_account_transaction;type:bigserial;primaryKey;autoIncrement" json:"id_account_transaction"`
 	Action               sql.NullString      `gorm:"column:action;type:text" json:"action"` // spend/earn
 	Amount               sql.NullFloat64     `gorm:"column:amount;type:numeric(16,2)" json:"amount"`
-	Reference            sql.NullString      `gorm:"column:reference;type:text;uniqueIndex:index_2" json:"reference"`
-	RIDAccount           sql.NullInt64       `gorm:"column:rid_account;type:bigint;uniqueIndex:index_2" json:"rid_account"`
-	TransactionDatetime  sql.NullTime        `gorm:"column:transaction_datetime;type:timestamp;index:index_3" json:"transaction_datetime"`
+	Reference            sql.NullString      `gorm:"column:reference;type:text;uniqueIndex:acct_txn_ref_uq" json:"reference"`
+	RIDAccount           sql.NullInt64       `gorm:"column:rid_account;type:bigint;uniqueIndex:acct_txn_ref_uq" json:"rid_account"`
+	TransactionDatetime  sql.NullTime        `gorm:"column:transaction_datetime;type:timestamp;index:acct_txn_datetime_idx" json:"transaction_datetime"`
 	RelRIDAccount        *ModelPublicAccount `gorm:"foreignKey:RIDAccount;references:IDAccount" json:"relridaccount,omitempty"` // Belongs to ModelPublicAccount
 }
 

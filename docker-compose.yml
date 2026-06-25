@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lpwallet
+      POSTGRES_USER: lpwallet
+      POSTGRES_PASSWORD: lpwallet
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lpwallet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://lpwallet:lpwallet@postgres:5432/lpwallet?sslmode=disable
+      LISTEN_ADDR: "0.0.0.0:8700"
+      ADMIN_EMAIL: admin@localhost
+      ADMIN_PASSWORD: changeme
+    ports:
+      - "8700:8700"
+
+volumes:
+  pgdata:

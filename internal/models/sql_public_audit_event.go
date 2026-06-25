@@ -7,12 +7,12 @@ import (
 )
 
 type ModelPublicAuditEvent struct {
-	IDAuditEvent                        int64                     `gorm:"column:id_audit_event;type:bigint;primaryKey" json:"id_audit_event"`
+	IDAuditEvent                        int64                     `gorm:"column:id_audit_event;type:bigserial;primaryKey;autoIncrement" json:"id_audit_event"`
 	Action                              sql.NullInt16             `gorm:"column:action;type:smallint" json:"action"`
-	Datetime                            sql.NullTime              `gorm:"column:datetime;type:timestamp;index:index_2" json:"datetime"`
+	Datetime                            sql.NullTime              `gorm:"column:datetime;type:timestamp;index:audit_event_datetime_idx" json:"datetime"`
 	RIDUser                             sql.NullInt64             `gorm:"column:rid_user;type:bigint" json:"rid_user"`
-	RowID                               sql.NullInt64             `gorm:"column:row_id;type:bigint;index:index_3" json:"row_id"`
-	Tablename                           sql.NullString            `gorm:"column:tablename;type:text;index:index_3" json:"tablename"`
+	RowID                               sql.NullInt64             `gorm:"column:row_id;type:bigint;index:audit_event_row_idx" json:"row_id"`
+	Tablename                           sql.NullString            `gorm:"column:tablename;type:text;index:audit_event_row_idx" json:"tablename"`
 	RelRIDUser                          *ModelPublicUser          `gorm:"foreignKey:RIDUser;references:IDUser" json:"relriduser,omitempty"`               // Belongs to ModelPublicUser
 	RelRIDAuditDetailPublicAuditDetails []*ModelPublicAuditDetail `gorm:"foreignKey:RIDAuditDetail" json:"relridauditdetailpublicauditdetails,omitempty"` // Has many ModelPublicAuditDetail
 }

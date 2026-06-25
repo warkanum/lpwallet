@@ -1,5 +1,5 @@
 Table "user" {
-  "id_user" bigint [pk, not null]
+  "id_user" bigserial [pk, not null, increment]
   "name" text
   "email" text
   "role" text [note: 'memeber/admin']
@@ -8,18 +8,18 @@ Table "user" {
   "client_secret" text
 
   Indexes {
-    email [unique, name: "index_2"]
+    email [unique, name: "user_email_uq"]
   }
 }
 
 Table "account" {
-  "id_account" bigint [pk, not null]
+  "id_account" bigserial [pk, not null, increment]
   "rid_user" bigint [ref: < "user"."id_user"]
   "name" text
   "balance" numeric(16,2)
 
   Indexes {
-    (rid_user, name) [unique, name: "index_2"]
+    (rid_user, name) [unique, name: "account_user_name_uq"]
   }
 }
 
@@ -32,13 +32,13 @@ Table "account_transaction" {
   "transaction_datetime" timestamp
 
   Indexes {
-    (reference, rid_account) [unique, name: "index_2"]
-    transaction_datetime [name: "index_3"]
+    (reference, rid_account) [unique, name: "acct_txn_ref_uq"]
+    transaction_datetime [name: "acct_txn_datetime_idx"]
   }
 }
 
 Table "audit_event" {
-  "id_audit_event" bigint [pk, not null]
+  "id_audit_event" bigserial [pk, not null, increment]
   "datetime" timestamp
   "tablename" text
   "row_id" bigint
@@ -46,8 +46,8 @@ Table "audit_event" {
   "action" smallint
 
   Indexes {
-    datetime [name: "index_2"]
-    (row_id, tablename) [name: "index_3"]
+    datetime [name: "audit_event_datetime_idx"]
+    (row_id, tablename) [name: "audit_event_row_idx"]
   }
 }
 

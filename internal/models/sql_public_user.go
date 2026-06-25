@@ -7,10 +7,10 @@ import (
 )
 
 type ModelPublicUser struct {
-	IDUser                       int64                     `gorm:"column:id_user;type:bigint;primaryKey" json:"id_user"`
+	IDUser                       int64                     `gorm:"column:id_user;type:bigserial;primaryKey;autoIncrement" json:"id_user"`
 	ClientID                     sql.NullString            `gorm:"column:client_id;type:text" json:"client_id"`
 	ClientSecret                 sql.NullString            `gorm:"column:client_secret;type:text" json:"client_secret"`
-	Email                        sql.NullString            `gorm:"column:email;type:text;uniqueIndex:index_2" json:"email"`
+	Email                        sql.NullString            `gorm:"column:email;type:text;uniqueIndex:user_email_uq" json:"email"`
 	Name                         sql.NullString            `gorm:"column:name;type:text" json:"name"`
 	Password                     sql.NullString            `gorm:"column:password;type:text" json:"password"`                        // Hashed SHA256 Password
 	Role                         sql.NullString            `gorm:"column:role;type:text" json:"role"`                                // memeber/admin
