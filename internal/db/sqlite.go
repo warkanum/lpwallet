@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm/schema"
 
 	"github.com/warkanum/lpwallet/internal/config"
-	"github.com/warkanum/lpwallet/internal/models"
 )
 
 // noSchemaDialector wraps a GORM dialector and strips "schema." prefixes from
@@ -63,7 +62,6 @@ func (m *noSchemaMigrator) FullDataTypeOf(field *schema.Field) clause.Expr {
 	}
 	return expr
 }
-
 
 func stripSchema(name string) string {
 	if idx := strings.LastIndex(name, "."); idx >= 0 {
@@ -143,15 +141,8 @@ func openSQLite(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("db: open sqlite: %w", err)
 	}
 
-	if err := db.AutoMigrate(
-		&models.ModelPublicUser{},
-		&models.ModelPublicAccount{},
-		&models.ModelPublicAccountTransaction{},
-		&models.ModelPublicAuditEvent{},
-		&models.ModelPublicAuditDetail{},
-		&models.ModelPublicUserSession{},
-	); err != nil {
-		return nil, fmt.Errorf("db: migrate: %w", err)
+	if err := migrate(db); err != nil {
+		return nil, err
 	}
 
 	if err := db.Use(&AuditPlugin{}); err != nil {

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/warkanum/lpwallet/internal/config"
+	"github.com/warkanum/lpwallet/internal/models"
 )
 
 func Open(cfg *config.Config) (*gorm.DB, error) {
@@ -27,6 +28,10 @@ func openPostgres(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("db: open postgres: %w", err)
 	}
 
+	if err := migrate(db); err != nil {
+		return nil, err
+	}
+
 	if err := db.Use(&AuditPlugin{}); err != nil {
 		return nil, fmt.Errorf("db: register audit plugin: %w", err)
 	}
@@ -36,4 +41,19 @@ func openPostgres(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func migrate(db *gorm.DB) error {
+	if err := db.AutoMigrate(
+		&models.ModelPublicUser{},
+		&models.ModelPublicAccount{},
+		&models.ModelPublicAccountTransaction{},
+		&models.ModelPublicAuditEvent{},
+		&models.ModelPublicAuditDetail{},
+		&models.ModelPublicUserSession{},
+	); err != nil {
+		return fmt.Errorf("db: migrate: %w", err)
+	}
+
+	return nil
 }

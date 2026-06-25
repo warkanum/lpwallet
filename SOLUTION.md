@@ -1,5 +1,6 @@
 # Solution Notes
 
+
 ## What was built
 
 REST API backend for a loyalty-points wallet. Go 1.26, stdlib `net/http`, GORM + PostgreSQL.

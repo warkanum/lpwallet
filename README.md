@@ -22,7 +22,8 @@ Loyalty Points Wallet backend for Sanlam SFTX. Tracks member accounts and loyalt
 
 ```sh
 # SQLite — no database setup needed
-ADMIN_PASSWORD=secret go run ./cmd/server
+make build
+ADMIN_PASSWORD=secredt DB_FILE=./lpwallet.db ./bin/lpwallet
 
 # Postgres via Docker Compose
 docker compose up

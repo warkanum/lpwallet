@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -21,18 +22,20 @@ const (
 )
 
 var auditedTables = map[string]bool{
-	"public.user":                true,
-	"public.account":             true,
-	"public.account_transaction": true,
+	"user":                true,
+	"account":             true,
+	"account_transaction": true,
 }
 
 type AuditPlugin struct {
-	logger *slog.Logger
+	logger  *slog.Logger
+	auditDB *gorm.DB
 }
 
 func (p *AuditPlugin) Name() string { return "audit_plugin" }
 
 func (p *AuditPlugin) Initialize(db *gorm.DB) error {
+	p.auditDB = db.Session(&gorm.Session{NewDB: true, SkipHooks: true})
 	db.Callback().Create().After("gorm:create").Register("audit:after_create", p.auditAfterWrite(AuditActionCreate))
 	db.Callback().Update().After("gorm:update").Register("audit:after_update", p.auditAfterWrite(AuditActionUpdate))
 	db.Callback().Delete().After("gorm:delete").Register("audit:after_delete", p.auditAfterWrite(AuditActionDelete))
@@ -44,8 +47,8 @@ func (p *AuditPlugin) auditAfterWrite(action int16) func(*gorm.DB) {
 		if tx.Error != nil {
 			return
 		}
-		tableName := tx.Statement.Table
-		if !auditedTables[tableName] {
+		rawTableName := normalizeAuditTableName(tx.Statement.Table)
+		if !auditedTables[rawTableName] {
 			return
 		}
 
@@ -61,43 +64,65 @@ func (p *AuditPlugin) auditAfterWrite(action int16) func(*gorm.DB) {
 		event := models.ModelPublicAuditEvent{
 			Action:    sql.NullInt16{Int16: action, Valid: true},
 			Datetime:  sql.NullTime{Time: time.Now(), Valid: true},
-			Tablename: sql.NullString{String: tableName, Valid: true},
+			Tablename: sql.NullString{String: "public." + rawTableName, Valid: true},
 			RowID:     rowID,
 			RIDUser:   userID,
 		}
-		if err := tx.Create(&event).Error; err != nil {
-			if p.logger != nil {
-				p.logger.Error("audit: insert event failed", "table", tableName, "err", err)
-			}
-			tx.Error = fmt.Errorf("audit: %w", err)
-			return
-		}
-
 		fields := extractFields(tx.Statement.Dest)
-		for col, val := range fields {
-			detail := models.ModelPublicAuditDetail{
-				RIDAuditDetail: sql.NullInt64{Int64: event.IDAuditEvent, Valid: true},
-				ColumnName:     sql.NullString{String: col, Valid: true},
-				ColumnValue:    sql.NullString{String: val, Valid: true},
-			}
-			if err := tx.Create(&detail).Error; err != nil {
-				if p.logger != nil {
-					p.logger.Error("audit: insert detail failed", "column", col, "err", err)
-				}
-				tx.Error = fmt.Errorf("audit: %w", err)
-				return
-			}
-		}
+		p.recordAudit(context.WithoutCancel(tx.Statement.Context), event, fields)
 
 		if p.logger != nil {
 			p.logger.Debug("audit: recorded",
-				"table", tableName,
+				"table", rawTableName,
 				"row_id", rowID.Int64,
 				"user_id", userID.Int64,
 				"action", action,
 			)
 		}
 	}
+}
+
+func (p *AuditPlugin) recordAudit(ctx context.Context, event models.ModelPublicAuditEvent, fields map[string]string) {
+	auditDB := p.auditDB
+	if auditDB == nil {
+		return
+	}
+
+	go func() {
+		const attempts = 10
+		if auditDB.Dialector.Name() == "sqlite" {
+			time.Sleep(25 * time.Millisecond)
+		}
+		for attempt := 1; attempt <= attempts; attempt++ {
+			if err := insertAudit(ctx, auditDB, event, fields); err != nil {
+				if p.logger != nil {
+					p.logger.Error("audit: insert failed", "attempt", attempt, "err", err)
+				}
+				time.Sleep(time.Duration(attempt) * 25 * time.Millisecond)
+				continue
+			}
+			return
+		}
+	}()
+}
+
+func insertAudit(ctx context.Context, auditDB *gorm.DB, event models.ModelPublicAuditEvent, fields map[string]string) error {
+	if err := auditDB.WithContext(ctx).Create(&event).Error; err != nil {
+		return fmt.Errorf("event: %w", err)
+	}
+
+	for col, val := range fields {
+		detail := models.ModelPublicAuditDetail{
+			RIDAuditDetail: sql.NullInt64{Int64: event.IDAuditEvent, Valid: true},
+			ColumnName:     sql.NullString{String: col, Valid: true},
+			ColumnValue:    sql.NullString{String: val, Valid: true},
+		}
+		if err := auditDB.WithContext(ctx).Create(&detail).Error; err != nil {
+			return fmt.Errorf("detail %q: %w", col, err)
+		}
+	}
+
+	return nil
 }
 
 func extractRowID(dest any) sql.NullInt64 {
@@ -167,4 +192,12 @@ func gormColumnName(tag string) string {
 		}
 	}
 	return ""
+}
+
+func normalizeAuditTableName(name string) string {
+	name = strings.Trim(name, `"`)
+	if idx := strings.LastIndex(name, "."); idx >= 0 {
+		return name[idx+1:]
+	}
+	return name
 }
